@@ -1167,6 +1167,33 @@
   </script>
   <!-- 引入 Firebase SDK -->
 <script type="module">
+  <script type="module">
+  // 取得剛剛掛載的 Firestore 工具
+  const db = window.db;
+  const { collection, addDoc, onSnapshot, query, orderBy } = window.fsTools;
+
+  // 1. 即時監聽資料庫（任何人更新，大家的畫面都會立刻同步）
+  const q = query(collection(db, "shared_items"), orderBy("createdAt", "desc"));
+  onSnapshot(q, (snapshot) => {
+    console.log("收到最新資料！");
+    snapshot.forEach((doc) => {
+      console.log(doc.id, "=>", doc.data());
+    });
+  });
+
+  // 2. 寫入新資料的函式（可以在控制台輸入 addNewItem("你的內容") 測試）
+  window.addNewItem = async function(content) {
+    try {
+      await addDoc(collection(db, "shared_items"), {
+        text: content,
+        createdAt: new Date()
+      });
+      console.log("發布成功！大家都能看到了。");
+    } catch (e) {
+      console.error("發布失敗：", e);
+    }
+  };
+</script>
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getFirestore, collection, addDoc, getDocs, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
