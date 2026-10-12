@@ -1165,5 +1165,30 @@
       initApp();
     }
   </script>
+  <!-- 引入 Firebase SDK -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, collection, addDoc, getDocs, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  // 你的專案專屬設定
+  const firebaseConfig = {
+    apiKey: "AIzaSyBcYKDQbk2iFn-lmPE9CNrafj_emicTUF4",
+    authDomain: "stress-relieving-mini-ga-da9dd.firebaseapp.com",
+    projectId: "stress-relieving-mini-ga-da9dd",
+    storageBucket: "stress-relieving-mini-ga-da9dd.firebasestorage.app",
+    messagingSenderId: "755792885884",
+    appId: "1:755792885884:web:02efa029e0ea509c3e31f9",
+    measurementId: "G-Q3ZW3PLVZC"
+  };
+
+  // 初始化 Firebase 與 Firestore 資料庫
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  // 掛載到 window 物件，方便全域呼叫
+  window.db = db;
+  window.fsTools = { collection, addDoc, getDocs, onSnapshot, query, orderBy };
+  console.log("Firebase 連線成功！");
+</script>
 </body>
 </html>
