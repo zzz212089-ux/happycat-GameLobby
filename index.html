@@ -1164,39 +1164,11 @@
     } else {
       initApp();
     }
-  </script>
-  <!-- 引入 Firebase SDK -->
+ <!-- 整合版 Firebase 與遊戲清單即時同步 -->
 <script type="module">
-  // 取得剛剛掛載的 Firestore 工具
-  const db = window.db;
-  const { collection, addDoc, onSnapshot, query, orderBy } = window.fsTools;
-
-  // 1. 即時監聽資料庫（任何人更新，大家的畫面都會立刻同步）
-  const q = query(collection(db, "shared_items"), orderBy("createdAt", "desc"));
-  onSnapshot(q, (snapshot) => {
-    console.log("收到最新資料！");
-    snapshot.forEach((doc) => {
-      console.log(doc.id, "=>", doc.data());
-    });
-  });
-
-  // 2. 寫入新資料的函式（可以在控制台輸入 addNewItem("你的內容") 測試）
-  window.addNewItem = async function(content) {
-    try {
-      await addDoc(collection(db, "shared_items"), {
-        text: content,
-        createdAt: new Date()
-      });
-      console.log("發布成功！大家都能看到了。");
-    } catch (e) {
-      console.error("發布失敗：", e);
-    }
-  };
-</script>
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getFirestore, collection, addDoc, getDocs, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { getFirestore, collection, addDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-  // 你的專案專屬設定
   const firebaseConfig = {
     apiKey: "AIzaSyBcYKDQbk2iFn-lmPE9CNrafj_emicTUF4",
     authDomain: "stress-relieving-mini-ga-da9dd.firebaseapp.com",
@@ -1207,14 +1179,30 @@
     measurementId: "G-Q3ZW3PLVZC"
   };
 
-  // 初始化 Firebase 與 Firestore 資料庫
+  // 1. 初始化 Firebase
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
-  // 掛載到 window 物件，方便全域呼叫
-  window.db = db;
-  window.fsTools = { collection, addDoc, getDocs, onSnapshot, query, orderBy };
-  console.log("Firebase 連線成功！");
+  // 2. 註冊測試新增功能到全域
+  window.addNewItem = async function(content) {
+    try {
+      const docRef = await addDoc(collection(db, "shared_items"), {
+        text: content,
+        createdAt: new Date()
+      });
+      console.log("發布成功！文件 ID: ", docRef.id);
+    } catch (e) {
+      console.error("發布失敗：", e);
+    }
+  };
+
+  // 3. 即時監聽資料庫更新
+  const q = query(collection(db, "shared_items"), orderBy("createdAt", "desc"));
+  onSnapshot(q, (snapshot) => {
+    snapshot.forEach((doc) => {
+      console.log("收到最新資料：", doc.id, "=>", doc.data());
+    });
+  });
+
+  console.log("Firebase 載入完成，addNewItem 已就緒！");
 </script>
-</body>
-</html>
