@@ -449,6 +449,11 @@
             <option value="cyberAmber">琥珀爆發 (Amber Gold)</option>
             <option value="neonCyan">藍調極光 (Neon Cyan)</option>
             <option value="heavyMetal">暗黑金屬 (Heavy Black)</option>
+            <option value="toxicGreen">毒液螢光 (Toxic Green)</option>
+            <option value="sakuraPink">狂暴櫻粉 (Sakura Pink)</option>
+            <option value="lavaOrange">熔岩烈火 (Lava Orange)</option>
+            <option value="frostCyan">冰霜極地 (Frost Cyan)</option>
+            <option value="deepViolet">暗夜羅蘭 (Deep Violet)</option>
           </select>
         </div>
         <div class="flex items-center justify-end gap-2 pt-3 border-t border-zinc-800">
@@ -610,6 +615,41 @@
         watermark: 'text-zinc-500/10',
         badge: 'bg-black/40 border-zinc-600 text-zinc-300',
         button: 'bg-gradient-to-r from-zinc-700 to-zinc-600 hover:from-zinc-600 hover:to-zinc-500 text-white shadow-lg shadow-zinc-900/50'
+      },
+      toxicGreen: {
+        border: 'border-emerald-500/60',
+        topGradient: 'from-emerald-700 to-teal-950',
+        watermark: 'text-emerald-500/10',
+        badge: 'bg-black/40 border-emerald-500/50 text-emerald-300',
+        button: 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-lg shadow-emerald-900/50'
+      },
+      sakuraPink: {
+        border: 'border-pink-500/60',
+        topGradient: 'from-pink-700 to-rose-950',
+        watermark: 'text-pink-500/10',
+        badge: 'bg-black/40 border-pink-500/50 text-pink-300',
+        button: 'bg-gradient-to-r from-pink-600 to-rose-500 hover:from-pink-500 hover:to-rose-400 text-white shadow-lg shadow-pink-900/50'
+      },
+      lavaOrange: {
+        border: 'border-orange-500/60',
+        topGradient: 'from-orange-700 to-amber-950',
+        watermark: 'text-orange-500/10',
+        badge: 'bg-black/40 border-orange-500/50 text-orange-300',
+        button: 'bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white shadow-lg shadow-orange-900/50'
+      },
+      frostCyan: {
+        border: 'border-cyan-400/60',
+        topGradient: 'from-cyan-700 to-blue-950',
+        watermark: 'text-cyan-400/10',
+        badge: 'bg-black/40 border-cyan-400/50 text-cyan-200',
+        button: 'bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white shadow-lg shadow-cyan-900/50'
+      },
+      deepViolet: {
+        border: 'border-violet-600/60',
+        topGradient: 'from-violet-800 to-slate-950',
+        watermark: 'text-violet-500/10',
+        badge: 'bg-black/40 border-violet-500/50 text-violet-300',
+        button: 'bg-gradient-to-r from-violet-600 to-purple-700 hover:from-violet-500 hover:to-purple-600 text-white shadow-lg shadow-violet-900/50'
       }
     };
 
@@ -759,7 +799,6 @@
           statusBadge.className = 'text-[10px] bg-emerald-950/80 border border-emerald-500/60 text-emerald-300 px-2 py-0.5 rounded-full font-bold ml-1 hidden sm:inline-block';
         }
 
-        // 即時監聽 Firestore 中的 games 集合（只要有人新增，所有造訪者會立刻更新！）
         db.collection('games').onSnapshot(snapshot => {
           customCloudGames = [];
           snapshot.forEach(docSnap => {
