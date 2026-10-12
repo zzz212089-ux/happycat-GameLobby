@@ -82,7 +82,6 @@
 
   <!-- Top Navigation Bar -->
   <header class="sticky top-0 z-40 w-full bg-zinc-950/90 backdrop-blur-md border-b border-zinc-800/80 px-4 sm:px-8 py-3.5 flex items-center justify-between shadow-xl shadow-black/60">
-    <!-- Brand Logo: Natural Ginger & White Cat with Pixel Meme Sunglasses -->
     <div class="flex items-center gap-3">
       <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-950 border-2 border-amber-500/70 flex items-center justify-center p-0.5 shadow-lg shadow-amber-500/20 overflow-hidden">
         <svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-[0_4px_8px_rgba(0,0,0,0.8)]" xmlns="http://www.w3.org/2000/svg">
@@ -109,7 +108,6 @@
           <line x1="25" y1="76" x2="7" y2="78" stroke="#fed7aa" stroke-width="1.5" stroke-linecap="round"/>
           <line x1="74" y1="72" x2="94" y2="69" stroke="#fed7aa" stroke-width="1.5" stroke-linecap="round"/>
           <line x1="75" y1="76" x2="93" y2="78" stroke="#fed7aa" stroke-width="1.5" stroke-linecap="round"/>
-          <!-- 8-BIT "DEAL WITH IT" SUNGLASSES -->
           <g shape-rendering="crispEdges">
             <rect x="8" y="46" width="8" height="4" fill="#000000"/>
             <rect x="16" y="50" width="4" height="4" fill="#000000"/>
@@ -293,7 +291,7 @@
       </span>
     </div>
 
-    <!-- Games Container Grid (直接在靜態 HTML 預建 4 款遊戲，Edge 斷網或封鎖 JS 也能保證顯示) -->
+    <!-- Games Container Grid -->
     <div id="gamesContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
       
       <!-- 01 惡魔貓 (Devil Cat) -->
@@ -518,7 +516,7 @@
       <!-- Mobile Floating Quick-Exit Action Button (FAB) -->
       <button 
         onclick="closePlayer()" 
-        id="mobileFloatingExitBtn"
+        id="mobileFloatingExitBtn" 
         class="sm:hidden fixed bottom-6 right-4 z-50 px-4 py-2.5 rounded-full bg-red-600/90 hover:bg-red-600 text-white font-black text-xs shadow-2xl shadow-red-950 flex items-center gap-2 border-2 border-red-400 active:scale-90 backdrop-blur-md transition-transform cursor-pointer"
         aria-label="返回遊戲大廳"
       >
@@ -528,7 +526,7 @@
     </div>
   </div>
 
-  <!-- Universal Standard Script (不使用 ES Module，徹底解決 Edge 本機 CORS 攔截問題) -->
+  <!-- Universal Standard Script -->
   <script>
     /* Default Game Catalog with direct GitHub Pages URLs */
     const DEFAULT_GAMES = [
@@ -730,7 +728,7 @@
     }
 
     const firebaseConfig = {
-      apiKey: "AIzaSyBcYKDQbk2iFn-lmPe9CNrafj_emicTUF4",
+      apiKey: "AIzaSyBcYKDQbk2iFn-lmPE9CNrafj_emicTUF4",
       authDomain: "stress-relieving-mini-ga-da9dd.firebaseapp.com",
       projectId: "stress-relieving-mini-ga-da9dd",
       storageBucket: "stress-relieving-mini-ga-da9dd.firebasestorage.app",
@@ -744,9 +742,8 @@
     function initCloudStorage() {
       const statusBadge = document.getElementById('cloudStatusBadge');
       
-      // 檢查 Firebase 是否受瀏覽器阻擋
       if (typeof firebase === 'undefined') {
-        console.warn("Edge 或網路限制 Firebase CDN，自動切換至本機備援模式");
+        console.warn("Firebase 未載入，切換至本機備援模式");
         if (statusBadge) statusBadge.innerText = '本機模式 💾';
         loadLocalFallbackGames();
         return;
@@ -767,6 +764,7 @@
           statusBadge.className = 'text-[10px] bg-emerald-950/80 border border-emerald-500/60 text-emerald-300 px-2 py-0.5 rounded-full font-bold ml-1 hidden sm:inline-block';
         }
 
+        // 即時監聽 Firestore 中的 games 集合（只要有人新增，所有造訪者會立刻更新！）
         db.collection('games').onSnapshot(snapshot => {
           customCloudGames = [];
           snapshot.forEach(docSnap => {
@@ -776,7 +774,7 @@
               name: data.name || '自訂遊戲',
               url: data.url || '#',
               tag: data.tag || '⚡ 雲端舞台',
-              desc: data.desc || '社群玩家共享搖滾遊戲',
+              desc: data.desc || '搖滾狂熱者收錄之精選對戰舞台',
               trackNum: data.trackNum || '#0' + (DEFAULT_GAMES.length + customCloudGames.length + 1),
               iconClass: data.iconClass || 'fa-solid fa-gamepad',
               colorTheme: data.colorTheme || 'crimsonFlame',
@@ -789,7 +787,7 @@
           games = [...DEFAULT_GAMES, ...customCloudGames];
           renderGames();
         }, err => {
-          console.warn("Firestore onSnapshot 錯誤，改用本地暫存:", err);
+          console.warn("Firestore 讀取失敗，改用本地暫存:", err);
           if (statusBadge) statusBadge.innerText = '本機備援 💾';
           loadLocalFallbackGames();
         });
@@ -1146,9 +1144,7 @@
     window.toggleRockMusic = toggleRockMusic;
 
     function initApp() {
-      // 1. 立即初始化並渲染
       renderGames();
-      // 2. 背景非同步連線 Firebase
       initCloudStorage();
 
       window.addEventListener('popstate', () => {
@@ -1165,44 +1161,6 @@
     } else {
       initApp();
     }
- <!-- 整合版 Firebase 與遊戲清單即時同步 -->
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getFirestore, collection, addDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyBcYKDQbk2iFn-lmPE9CNrafj_emicTUF4",
-    authDomain: "stress-relieving-mini-ga-da9dd.firebaseapp.com",
-    projectId: "stress-relieving-mini-ga-da9dd",
-    storageBucket: "stress-relieving-mini-ga-da9dd.firebasestorage.app",
-    messagingSenderId: "755792885884",
-    appId: "1:755792885884:web:02efa029e0ea509c3e31f9",
-    measurementId: "G-Q3ZW3PLVZC"
-  };
-
-  // 1. 初始化 Firebase
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
-
-  // 2. 註冊測試新增功能到全域
-  window.addNewItem = async function(content) {
-    try {
-      const docRef = await addDoc(collection(db, "shared_items"), {
-        text: content,
-        createdAt: new Date()
-      });
-      console.log("發布成功！文件 ID: ", docRef.id);
-    } catch (e) {
-      console.error("發布失敗：", e);
-    }
-  };
-
-  // 3. 即時監聽資料庫更新
-  const q = query(collection(db, "shared_items"), orderBy("createdAt", "desc"));
-  onSnapshot(q, (snapshot) => {
-    snapshot.forEach((doc) => {
-      console.log("收到最新資料：", doc.id, "=>", doc.data());
-    });
-  });
-
-  console.log("Firebase 載入完成，addNewItem 已就緒！");
-</script>
+  </script>
+</body>
+</html>
