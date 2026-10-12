@@ -21,7 +21,6 @@
 
   <!-- Firebase Universal Compat SDKs (相容所有瀏覽器，包含 Edge、Chrome、Safari 及本機 file://) -->
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
   <style>
@@ -754,10 +753,6 @@
           firebase.initializeApp(firebaseConfig);
         }
         db = firebase.firestore();
-
-        firebase.auth().signInAnonymously().catch(e => {
-          console.warn("匿名驗證略過:", e);
-        });
 
         if (statusBadge) {
           statusBadge.innerText = '雲端已連線 ⚡';
