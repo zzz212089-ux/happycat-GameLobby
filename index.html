@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-  <link rel="icon" href="data:,">
   <meta charset="UTF-8">
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -21,6 +20,7 @@
 
   <!-- Firebase Universal Compat SDKs (相容所有瀏覽器，包含 Edge、Chrome、Safari 及本機 file://) -->
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
   <style>
@@ -81,6 +81,7 @@
 
   <!-- Top Navigation Bar -->
   <header class="sticky top-0 z-40 w-full bg-zinc-950/90 backdrop-blur-md border-b border-zinc-800/80 px-4 sm:px-8 py-3.5 flex items-center justify-between shadow-xl shadow-black/60">
+    <!-- Brand Logo: Natural Ginger & White Cat with Pixel Meme Sunglasses -->
     <div class="flex items-center gap-3">
       <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-950 border-2 border-amber-500/70 flex items-center justify-center p-0.5 shadow-lg shadow-amber-500/20 overflow-hidden">
         <svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-[0_4px_8px_rgba(0,0,0,0.8)]" xmlns="http://www.w3.org/2000/svg">
@@ -107,6 +108,7 @@
           <line x1="25" y1="76" x2="7" y2="78" stroke="#fed7aa" stroke-width="1.5" stroke-linecap="round"/>
           <line x1="74" y1="72" x2="94" y2="69" stroke="#fed7aa" stroke-width="1.5" stroke-linecap="round"/>
           <line x1="75" y1="76" x2="93" y2="78" stroke="#fed7aa" stroke-width="1.5" stroke-linecap="round"/>
+          <!-- 8-BIT "DEAL WITH IT" SUNGLASSES -->
           <g shape-rendering="crispEdges">
             <rect x="8" y="46" width="8" height="4" fill="#000000"/>
             <rect x="16" y="50" width="4" height="4" fill="#000000"/>
@@ -284,13 +286,13 @@
         <h3 class="font-black text-xl text-white rock-font tracking-wide">迷幻嗨嗨目錄</h3>
       </div>
       <span id="gameTotalCount" class="text-xs font-black bg-zinc-900 border border-zinc-700 text-zinc-300 px-3.5 py-1.5 rounded-xl shadow flex items-center gap-2">
-        <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399] animate-pulse"></span>
+        <span id="livePulseDot" class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399] animate-pulse"></span>
         <span id="gameCountText">共有 4 款遊戲</span>
-        <span id="cloudStatusBadge" class="text-[10px] bg-red-950/80 border border-red-500/50 text-red-300 px-2 py-0.5 rounded-full font-bold ml-1 hidden sm:inline-block">雲端同步中 ⚡</span>
+        <span id="cloudStatusBadge" class="text-[10px] bg-red-950/80 border border-red-500/50 text-red-300 px-2 py-0.5 rounded-full font-bold ml-1 hidden sm:inline-block">雲端連線中...</span>
       </span>
     </div>
 
-    <!-- Games Container Grid -->
+    <!-- Games Container Grid (預建 4 款遊戲) -->
     <div id="gamesContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
       
       <!-- 01 惡魔貓 (Devil Cat) -->
@@ -428,7 +430,7 @@
         <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-red-600 to-rose-600 border border-red-400 flex items-center justify-center text-white text-lg font-black shadow">⚡</div>
         <div>
           <h3 class="text-lg font-black text-white rock-font">搖滾區</h3>
-          <p class="text-xs text-zinc-400 font-bold">輸入自訂遊戲名稱與網址，舞台即刻收錄！</p>
+          <p class="text-xs text-zinc-400 font-bold">輸入自訂遊戲名稱與網址，即刻同步給所有玩家！</p>
         </div>
       </div>
 
@@ -444,21 +446,28 @@
         <div>
           <label class="block text-xs font-black text-zinc-300 mb-1">舞台燈光色系</label>
           <select id="inputGameColor" class="w-full px-3.5 py-2.5 rounded-xl border border-zinc-700 focus:border-red-500 focus:outline-none font-bold text-sm bg-zinc-800 text-white">
-            <option value="crimsonFlame">烈焰狂潮 (Crimson Red)</option>
-            <option value="electricPurple">電子紫光 (Electric Purple)</option>
-            <option value="cyberAmber">琥珀爆發 (Amber Gold)</option>
-            <option value="neonCyan">藍調極光 (Neon Cyan)</option>
-            <option value="heavyMetal">暗黑金屬 (Heavy Black)</option>
-            <option value="toxicGreen">毒液螢光 (Toxic Green)</option>
-            <option value="sakuraPink">狂暴櫻粉 (Sakura Pink)</option>
-            <option value="lavaOrange">熔岩烈火 (Lava Orange)</option>
-            <option value="frostCyan">冰霜極地 (Frost Cyan)</option>
-            <option value="deepViolet">暗夜羅蘭 (Deep Violet)</option>
+            <option value="auto">自動輪替色彩（推薦・保證不撞色）</option>
+            <option value="crimsonFlame">01 烈焰赤紅 (Crimson Red)</option>
+            <option value="cyberAmber">02 琥珀金黃 (Amber Gold)</option>
+            <option value="emeraldGreen">03 翡翠毒素 (Emerald Green)</option>
+            <option value="electricPurple">04 電子紫光 (Electric Purple)</option>
+            <option value="neonCyan">05 藍調極光 (Neon Cyan)</option>
+            <option value="blazingOrange">06 狂暴熔岩 (Blazing Orange)</option>
+            <option value="hotPink">07 魅影粉紅 (Hot Pink)</option>
+            <option value="electricLime">08 霓虹青檸 (Electric Lime)</option>
+            <option value="cobaltBlue">09 深海鈷藍 (Cobalt Blue)</option>
+            <option value="warmPeach">10 落日蜜桃 (Warm Coral)</option>
+            <option value="mysticTeal">11 極光松石 (Mystic Teal)</option>
+            <option value="laserRuby">12 雷射紅寶 (Laser Ruby)</option>
+            <option value="solarYellow">13 太陽亮黃 (Solar Yellow)</option>
+            <option value="darkGrape">14 深邃暗紫 (Indigo Grape)</option>
+            <option value="mintFresh">15 薄荷新浪 (Mint Fresh)</option>
+            <option value="bloodCopper">16 赤褐重金 (Blood Copper)</option>
           </select>
         </div>
         <div class="flex items-center justify-end gap-2 pt-3 border-t border-zinc-800">
           <button type="button" onclick="closeAddModal()" class="px-4 py-2 rounded-xl text-zinc-400 font-black text-xs hover:bg-zinc-800 cursor-pointer">取消</button>
-          <button type="submit" class="px-5 py-2 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 border border-red-400 text-white font-black text-xs shadow-lg shadow-red-900/50 cursor-pointer">加入舞台！</button>
+          <button type="submit" id="submitGameBtn" class="px-5 py-2 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 border border-red-400 text-white font-black text-xs shadow-lg shadow-red-900/50 cursor-pointer">加入舞台！</button>
         </div>
       </form>
     </div>
@@ -520,7 +529,7 @@
       <!-- Mobile Floating Quick-Exit Action Button (FAB) -->
       <button 
         onclick="closePlayer()" 
-        id="mobileFloatingExitBtn" 
+        id="mobileFloatingExitBtn"
         class="sm:hidden fixed bottom-6 right-4 z-50 px-4 py-2.5 rounded-full bg-red-600/90 hover:bg-red-600 text-white font-black text-xs shadow-2xl shadow-red-950 flex items-center gap-2 border-2 border-red-400 active:scale-90 backdrop-blur-md transition-transform cursor-pointer"
         aria-label="返回遊戲大廳"
       >
@@ -530,7 +539,6 @@
     </div>
   </div>
 
-  <!-- Universal Standard Script -->
   <script>
     /* Default Game Catalog with direct GitHub Pages URLs */
     const DEFAULT_GAMES = [
@@ -581,75 +589,133 @@
     ];
 
     const COLOR_THEMES = {
+      // 01. 烈焰赤紅 (深紅 / 猩紅)
       crimsonFlame: {
-        border: 'border-red-600/60',
+        border: 'border-red-600/80',
         topGradient: 'from-red-800 to-rose-950',
         watermark: 'text-red-500/10',
-        badge: 'bg-black/40 border-red-500/50 text-red-300',
-        button: 'bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white shadow-lg shadow-red-900/50'
+        badge: 'bg-black/40 border-red-500/60 text-red-300',
+        button: 'bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white shadow-lg shadow-red-950/60'
       },
-      electricPurple: {
-        border: 'border-purple-600/60',
-        topGradient: 'from-purple-800 to-indigo-950',
-        watermark: 'text-purple-500/10',
-        badge: 'bg-black/40 border-purple-500/50 text-purple-300',
-        button: 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-lg shadow-purple-900/50'
-      },
+      // 02. 琥珀金黃 (金黃 / 暖陽)
       cyberAmber: {
-        border: 'border-amber-600/60',
-        topGradient: 'from-amber-700 to-amber-950',
+        border: 'border-amber-500/80',
+        topGradient: 'from-amber-600 to-yellow-950',
         watermark: 'text-amber-500/10',
-        badge: 'bg-black/40 border-amber-500/50 text-amber-300',
-        button: 'bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white shadow-lg shadow-amber-900/50'
+        badge: 'bg-black/40 border-amber-500/60 text-amber-300',
+        button: 'bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-400 hover:to-yellow-500 text-black font-extrabold shadow-lg shadow-amber-950/60'
       },
-      neonCyan: {
-        border: 'border-sky-600/60',
-        topGradient: 'from-sky-700 to-cyan-950',
-        watermark: 'text-sky-500/10',
-        badge: 'bg-black/40 border-sky-500/50 text-sky-300',
-        button: 'bg-gradient-to-r from-sky-600 to-cyan-600 hover:from-sky-500 hover:to-cyan-500 text-white shadow-lg shadow-sky-900/50'
-      },
-      heavyMetal: {
-        border: 'border-zinc-700',
-        topGradient: 'from-zinc-800 to-zinc-950',
-        watermark: 'text-zinc-500/10',
-        badge: 'bg-black/40 border-zinc-600 text-zinc-300',
-        button: 'bg-gradient-to-r from-zinc-700 to-zinc-600 hover:from-zinc-600 hover:to-zinc-500 text-white shadow-lg shadow-zinc-900/50'
-      },
-      toxicGreen: {
-        border: 'border-emerald-500/60',
+      // 03. 翡翠毒素 (正綠 / 翠綠)
+      emeraldGreen: {
+        border: 'border-emerald-500/80',
         topGradient: 'from-emerald-700 to-teal-950',
         watermark: 'text-emerald-500/10',
-        badge: 'bg-black/40 border-emerald-500/50 text-emerald-300',
-        button: 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-lg shadow-emerald-900/50'
+        badge: 'bg-black/40 border-emerald-500/60 text-emerald-300',
+        button: 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-lg shadow-emerald-950/60'
       },
-      sakuraPink: {
-        border: 'border-pink-500/60',
-        topGradient: 'from-pink-700 to-rose-950',
-        watermark: 'text-pink-500/10',
-        badge: 'bg-black/40 border-pink-500/50 text-pink-300',
-        button: 'bg-gradient-to-r from-pink-600 to-rose-500 hover:from-pink-500 hover:to-rose-400 text-white shadow-lg shadow-pink-900/50'
+      // 04. 電子紫光 (鮮明紫 / 羅蘭)
+      electricPurple: {
+        border: 'border-purple-600/80',
+        topGradient: 'from-purple-800 to-indigo-950',
+        watermark: 'text-purple-500/10',
+        badge: 'bg-black/40 border-purple-500/60 text-purple-300',
+        button: 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-lg shadow-purple-950/60'
       },
-      lavaOrange: {
-        border: 'border-orange-500/60',
-        topGradient: 'from-orange-700 to-amber-950',
-        watermark: 'text-orange-500/10',
-        badge: 'bg-black/40 border-orange-500/50 text-orange-300',
-        button: 'bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white shadow-lg shadow-orange-900/50'
-      },
-      frostCyan: {
-        border: 'border-cyan-400/60',
-        topGradient: 'from-cyan-700 to-blue-950',
+      // 05. 藍調極光 (亮天藍 / 青藍)
+      neonCyan: {
+        border: 'border-cyan-400/80',
+        topGradient: 'from-cyan-600 to-blue-950',
         watermark: 'text-cyan-400/10',
-        badge: 'bg-black/40 border-cyan-400/50 text-cyan-200',
-        button: 'bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white shadow-lg shadow-cyan-900/50'
+        badge: 'bg-black/40 border-cyan-400/60 text-cyan-200',
+        button: 'bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-black font-extrabold shadow-lg shadow-cyan-950/60'
       },
-      deepViolet: {
-        border: 'border-violet-600/60',
-        topGradient: 'from-violet-800 to-slate-950',
-        watermark: 'text-violet-500/10',
-        badge: 'bg-black/40 border-violet-500/50 text-violet-300',
-        button: 'bg-gradient-to-r from-violet-600 to-purple-700 hover:from-violet-500 hover:to-purple-600 text-white shadow-lg shadow-violet-900/50'
+      // 06. 狂暴熔岩 (火橘 / 烈火橙)
+      blazingOrange: {
+        border: 'border-orange-500/80',
+        topGradient: 'from-orange-600 to-red-950',
+        watermark: 'text-orange-500/10',
+        badge: 'bg-black/40 border-orange-500/60 text-orange-300',
+        button: 'bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white shadow-lg shadow-orange-950/60'
+      },
+      // 07. 魅影粉紅 (螢光粉紅 / 桃紅)
+      hotPink: {
+        border: 'border-pink-500/80',
+        topGradient: 'from-pink-600 to-fuchsia-950',
+        watermark: 'text-pink-500/10',
+        badge: 'bg-black/40 border-pink-500/60 text-pink-300',
+        button: 'bg-gradient-to-r from-pink-600 to-fuchsia-600 hover:from-pink-500 hover:to-fuchsia-500 text-white shadow-lg shadow-pink-950/60'
+      },
+      // 08. 霓虹青檸 (螢光黃綠 / 亮青檸)
+      electricLime: {
+        border: 'border-lime-400/80',
+        topGradient: 'from-lime-600 to-emerald-950',
+        watermark: 'text-lime-400/10',
+        badge: 'bg-black/40 border-lime-400/60 text-lime-200',
+        button: 'bg-gradient-to-r from-lime-500 to-green-600 hover:from-lime-400 hover:to-green-500 text-black font-extrabold shadow-lg shadow-lime-950/60'
+      },
+      // 09. 深海鈷藍 (正寶藍 / 湛藍)
+      cobaltBlue: {
+        border: 'border-blue-600/80',
+        topGradient: 'from-blue-700 to-slate-950',
+        watermark: 'text-blue-500/10',
+        badge: 'bg-black/40 border-blue-500/60 text-blue-200',
+        button: 'bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-500 hover:to-indigo-600 text-white shadow-lg shadow-blue-950/60'
+      },
+      // 10. 落日蜜桃 (暖珊瑚 / 蜜桃粉)
+      warmPeach: {
+        border: 'border-rose-400/80',
+        topGradient: 'from-rose-500 to-orange-950',
+        watermark: 'text-rose-400/10',
+        badge: 'bg-black/40 border-rose-400/60 text-rose-200',
+        button: 'bg-gradient-to-r from-rose-500 to-orange-500 hover:from-rose-400 hover:to-orange-400 text-white shadow-lg shadow-rose-950/60'
+      },
+      // 11. 極光松石 (藍綠 / 孔雀青)
+      mysticTeal: {
+        border: 'border-teal-400/80',
+        topGradient: 'from-teal-600 to-cyan-950',
+        watermark: 'text-teal-400/10',
+        badge: 'bg-black/40 border-teal-400/60 text-teal-200',
+        button: 'bg-gradient-to-r from-teal-500 to-cyan-600 hover:from-teal-400 hover:to-cyan-500 text-white shadow-lg shadow-teal-950/60'
+      },
+      // 12. 雷射紅寶 (紅寶石 / 蔓越莓紅)
+      laserRuby: {
+        border: 'border-ruby-500 border-rose-600/80',
+        topGradient: 'from-rose-700 to-red-950',
+        watermark: 'text-rose-500/10',
+        badge: 'bg-black/40 border-rose-500/60 text-rose-300',
+        button: 'bg-gradient-to-r from-rose-600 to-red-700 hover:from-rose-500 hover:to-red-600 text-white shadow-lg shadow-red-950/60'
+      },
+      // 13. 太陽亮黃 (檸檬黃 / 耀眼金)
+      solarYellow: {
+        border: 'border-yellow-400/80',
+        topGradient: 'from-yellow-500 to-amber-950',
+        watermark: 'text-yellow-400/10',
+        badge: 'bg-black/40 border-yellow-400/60 text-yellow-200',
+        button: 'bg-gradient-to-r from-yellow-400 to-amber-500 hover:from-yellow-300 hover:to-amber-400 text-black font-extrabold shadow-lg shadow-yellow-950/60'
+      },
+      // 14. 深邃暗紫 (神秘靛藍 / 葡萄紫)
+      darkGrape: {
+        border: 'border-indigo-500/80',
+        topGradient: 'from-indigo-700 to-violet-950',
+        watermark: 'text-indigo-400/10',
+        badge: 'bg-black/40 border-indigo-400/60 text-indigo-200',
+        button: 'bg-gradient-to-r from-indigo-600 to-purple-800 hover:from-indigo-500 hover:to-purple-700 text-white shadow-lg shadow-indigo-950/60'
+      },
+      // 15. 薄荷新浪 (清爽水綠 / 薄荷綠)
+      mintFresh: {
+        border: 'border-emerald-300/80',
+        topGradient: 'from-emerald-500 to-teal-950',
+        watermark: 'text-emerald-300/10',
+        badge: 'bg-black/40 border-emerald-300/60 text-emerald-100',
+        button: 'bg-gradient-to-r from-emerald-400 to-teal-500 hover:from-emerald-300 hover:to-teal-400 text-black font-extrabold shadow-lg shadow-emerald-950/60'
+      },
+      // 16. 赤褐重金 (古銅銅金 / 鐵鏽紅褐)
+      bloodCopper: {
+        border: 'border-yellow-700/80',
+        topGradient: 'from-yellow-800 to-stone-950',
+        watermark: 'text-amber-700/10',
+        badge: 'bg-black/40 border-amber-700/60 text-amber-200',
+        button: 'bg-gradient-to-r from-amber-700 to-yellow-800 hover:from-amber-600 hover:to-yellow-700 text-white shadow-lg shadow-amber-950/60'
       }
     };
 
@@ -668,9 +734,18 @@
       }
       container.innerHTML = '';
 
+      const themeKeyList = Object.keys(COLOR_THEMES);
+
       games.forEach((game, index) => {
-        const theme = COLOR_THEMES[game.colorTheme] || COLOR_THEMES.crimsonFlame;
-        const trackDisplay = game.trackNum || `#0${index + 1}`;
+        // 智能色彩輪替（跨色相跳躍分配，確保相鄰兩張絕不相近、16 種全光譜均勻呈現）：
+        let selectedThemeKey = game.colorTheme;
+        if (!selectedThemeKey || selectedThemeKey === 'auto' || !COLOR_THEMES[selectedThemeKey]) {
+          selectedThemeKey = themeKeyList[index % themeKeyList.length];
+        }
+
+        const theme = COLOR_THEMES[selectedThemeKey] || COLOR_THEMES[themeKeyList[index % themeKeyList.length]];
+        // 自動依照在列表中的位置連續補零排序 (#01, #02, #03...)
+        const trackDisplay = `#${String(index + 1).padStart(2, '0')}`;
         const card = document.createElement('div');
         card.className = `rounded-3xl border ${theme.border} bg-zinc-950 overflow-hidden flex flex-col justify-between group hover:scale-[1.02] transition-all duration-300 shadow-2xl shadow-black/80`;
 
@@ -766,8 +841,9 @@
       }
     }
 
+    /* Firebase Configuration */
     const firebaseConfig = {
-      apiKey: "AIzaSyBcYKDQbk2iFn-lmPE9CNrafj_emicTUF4",
+      apiKey: "AIzaSyBcYKDQbk2iFn-lmPe9CNrafj_emicTUF4",
       authDomain: "stress-relieving-mini-ga-da9dd.firebaseapp.com",
       projectId: "stress-relieving-mini-ga-da9dd",
       storageBucket: "stress-relieving-mini-ga-da9dd.firebasestorage.app",
@@ -777,14 +853,13 @@
     };
 
     let db = null;
+    let isCloudReady = false;
 
     function initCloudStorage() {
       const statusBadge = document.getElementById('cloudStatusBadge');
       
       if (typeof firebase === 'undefined') {
-        console.warn("Firebase 未載入，切換至本機備援模式");
-        if (statusBadge) statusBadge.innerText = '本機模式 💾';
-        loadLocalFallbackGames();
+        setCloudStatus(false, '連線庫受阻 ⚠️');
         return;
       }
 
@@ -794,12 +869,16 @@
         }
         db = firebase.firestore();
 
-        if (statusBadge) {
-          statusBadge.innerText = '雲端已連線 ⚡';
-          statusBadge.className = 'text-[10px] bg-emerald-950/80 border border-emerald-500/60 text-emerald-300 px-2 py-0.5 rounded-full font-bold ml-1 hidden sm:inline-block';
-        }
+        // 嘗試登入匿名帳號
+        firebase.auth().signInAnonymously().catch(e => {
+          console.warn("Firebase 匿名驗證失敗 (請檢查 Authentication 是否啟用 Anonymous):", e);
+        });
 
+        // 即時監聽 Firestore 中的 games 集合
         db.collection('games').onSnapshot(snapshot => {
+          isCloudReady = true;
+          setCloudStatus(true, '雲端已連線 ⚡');
+
           customCloudGames = [];
           snapshot.forEach(docSnap => {
             const data = docSnap.data();
@@ -808,7 +887,7 @@
               name: data.name || '自訂遊戲',
               url: data.url || '#',
               tag: data.tag || '⚡ 雲端舞台',
-              desc: data.desc || '搖滾狂熱者收錄之精選對戰舞台',
+              desc: data.desc || '社群玩家共享搖滾遊戲',
               trackNum: data.trackNum || '#0' + (DEFAULT_GAMES.length + customCloudGames.length + 1),
               iconClass: data.iconClass || 'fa-solid fa-gamepad',
               colorTheme: data.colorTheme || 'crimsonFlame',
@@ -821,50 +900,54 @@
           games = [...DEFAULT_GAMES, ...customCloudGames];
           renderGames();
         }, err => {
-          console.warn("Firestore 讀取失敗，改用本地暫存:", err);
-          if (statusBadge) statusBadge.innerText = '本機備援 💾';
-          loadLocalFallbackGames();
+          isCloudReady = false;
+          console.error("Firestore 監聽失敗 (請檢查 Firestore Rules 權限設定):", err);
+          if (err.code === 'permission-denied') {
+            setCloudStatus(false, '權限被拒 🚫 (請改Rules)');
+          } else {
+            setCloudStatus(false, '雲端連線失敗 ⚠️');
+          }
         });
 
       } catch (err) {
-        console.warn("Firebase 初始化例外，改用本地暫存:", err);
-        if (statusBadge) statusBadge.innerText = '本機模式 💾';
-        loadLocalFallbackGames();
+        isCloudReady = false;
+        console.error("Firebase 初始化失敗:", err);
+        setCloudStatus(false, '雲端未連線 ⚠️');
       }
     }
 
-    function loadLocalFallbackGames() {
-      try {
-        const stored = localStorage.getItem('happy_cat_rock_games');
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          const custom = parsed.filter(g => !g.isDefault);
-          games = [...DEFAULT_GAMES, ...custom];
-        } else {
-          games = [...DEFAULT_GAMES];
-        }
-      } catch (e) {
-        games = [...DEFAULT_GAMES];
+    function setCloudStatus(online, text) {
+      const statusBadge = document.getElementById('cloudStatusBadge');
+      const dot = document.getElementById('livePulseDot');
+      if (!statusBadge) return;
+
+      statusBadge.innerText = text;
+      statusBadge.classList.remove('hidden');
+
+      if (online) {
+        statusBadge.className = 'text-[10px] bg-emerald-950/80 border border-emerald-500/60 text-emerald-300 px-2 py-0.5 rounded-full font-bold ml-1 inline-block';
+        if (dot) dot.className = 'inline-block w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399] animate-pulse';
+      } else {
+        statusBadge.className = 'text-[10px] bg-red-950/80 border border-red-500/60 text-red-300 px-2 py-0.5 rounded-full font-bold ml-1 inline-block';
+        if (dot) dot.className = 'inline-block w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_8px_#ef4444]';
       }
-      renderGames();
     }
 
     async function deleteGame(id, event) {
       if (event) event.stopPropagation();
-      if (db) {
+      if (!confirm("確定要刪除這款所有人共享的遊戲嗎？")) return;
+
+      if (db && isCloudReady) {
         try {
           await db.collection('games').doc(id).delete();
           return;
         } catch (e) {
-          console.error("刪除雲端遊戲錯誤:", e);
+          alert("刪除失敗：" + e.message + "\n請確認 Firebase 規則是否有寫入權限！");
+          return;
         }
+      } else {
+        alert("目前尚未連線至 Firebase 雲端資料庫，無法執行刪除！");
       }
-
-      games = games.filter(g => g.id !== id);
-      try {
-        localStorage.setItem('happy_cat_rock_games', JSON.stringify(games));
-      } catch (e) {}
-      renderGames();
     }
 
     function openAddModal() {
@@ -877,61 +960,83 @@
       document.getElementById('addModal').classList.remove('flex');
     }
 
+    function selectQuickTag(tagName) {
+      const tagInput = document.getElementById('inputGameTag');
+      if (tagInput) {
+        tagInput.value = tagName;
+      }
+    }
+
     async function handleFormSubmit(e) {
       e.preventDefault();
       const name = document.getElementById('inputGameName').value.trim();
+      const tag = document.getElementById('inputGameTag').value.trim() || '⚡ 搖滾新星';
+      const desc = document.getElementById('inputGameDesc').value.trim() || '熱血玩家推薦的好玩遊戲！';
       const url = document.getElementById('inputGameUrl').value.trim();
+      const icon = document.getElementById('inputGameIcon').value;
       const color = document.getElementById('inputGameColor').value;
+      const submitBtn = document.getElementById('submitGameBtn');
 
       if (!name || !url) return;
 
       const newGameData = {
         name: name,
+        tag: tag,
+        desc: desc,
         url: url,
-        tag: '⚡ 巡迴新星',
-        desc: '搖滾狂熱者收錄之精選對戰舞台',
-        iconClass: 'fa-solid fa-gamepad',
+        iconClass: icon,
         colorTheme: color,
         createdAt: Date.now()
       };
 
-      if (db) {
-        try {
-          await db.collection('games').add(newGameData);
-          closeAddModal();
-          document.getElementById('inputGameName').value = '';
-          document.getElementById('inputGameUrl').value = '';
-          return;
-        } catch (err) {
-          console.warn("寫入雲端失敗，切換至本機暫存:", err);
-        }
+      if (!db || !isCloudReady) {
+        alert("⚠️ 雲端資料庫尚未連線成功！\n\n原因：\n1. 請確認 Firebase 控制台已啟用 Firestore Database。\n2. 請確認 Firestore「規則 (Rules)」允許 read, write。\n3. 請確認 Authentication「匿名登入」已開啟。\n\n目前無法同步給其他人！");
+        return;
       }
 
-      const localGame = { ...newGameData, id: 'custom-' + Date.now(), isDefault: false };
-      games.push(localGame);
+      submitBtn.disabled = true;
+      submitBtn.innerText = "雲端上傳中...";
+
       try {
-        localStorage.setItem('happy_cat_rock_games', JSON.stringify(games));
-      } catch (e) {}
-      renderGames();
-      closeAddModal();
-      document.getElementById('inputGameName').value = '';
-      document.getElementById('inputGameUrl').value = '';
+        // 直接寫入 Firestore 雲端集合
+        await db.collection('games').add(newGameData);
+        alert("🎉 成功發布至雲端！所有線上玩家都已經能看到這款遊戲！");
+        closeAddModal();
+        document.getElementById('inputGameName').value = '';
+        document.getElementById('inputGameTag').value = '';
+        document.getElementById('inputGameDesc').value = '';
+        document.getElementById('inputGameUrl').value = '';
+      } catch (err) {
+        console.error("雲端寫入失敗:", err);
+        if (err.code === 'permission-denied') {
+          alert("❌ 上傳失敗：權限被拒絕 (Permission Denied)！\n\n請前往 Firebase 控制台 ➔ Firestore Database ➔ 規則 (Rules)，將規則改為 allow read, write: if true; 並點擊「發布」。");
+        } else {
+          alert("❌ 上傳失敗：" + err.message);
+        }
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerText = "加入舞台！";
+      }
     }
 
+    window.selectQuickTag = selectQuickTag;
+
+    /* Web Audio Synthesis Note Frequencies & State */
     let audioCtx = null;
-    let isPlaying = false;
-    let schedulerTimer = null;
-    let currentStep = 0;
-    let nextStepTime = 0;
     let distortionCurve = null;
-    let sharedNoiseBuffer = null;
     let masterCompressor = null;
     let masterGain = null;
+    let sharedNoiseBuffer = null;
+    let isPlaying = false;
+    let currentStep = 0;
+    let nextStepTime = 0;
+    let schedulerTimer = null;
 
-    const A2 = 110.00, C3 = 130.81, D3 = 146.83, E3 = 164.81, F3 = 174.61, G3 = 196.00, A3 = 220.00;
+    // Bass / Root notes
+    const A2 = 110.00;
+    const C3 = 130.81, D3 = 146.83, E3 = 164.81, F3 = 174.61, G3 = 196.00, A3 = 220.00;
     const C4 = 261.63, D4 = 293.66, E4 = 329.63, F4 = 349.23, G4 = 392.00, A4 = 440.00;
     const C5 = 523.25, D5 = 587.33, E5 = 659.25, G5 = 783.99, A5 = 880.00;
-    const C6 = 1046.50, D6 = 1174.66, E6 = 1318.51;
 
     const CHORD_A5 = [A2, E3, A3];
     const CHORD_C5 = [C3, G3, C4];
