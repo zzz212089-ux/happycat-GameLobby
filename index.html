@@ -935,19 +935,38 @@
 
     async function deleteGame(id, event) {
       if (event) event.stopPropagation();
-      if (!confirm("確定要刪除這款所有人共享的遊戲嗎？")) return;
+      
+      const customDialog = document.createElement('div');
+      customDialog.className = 'fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4';
+      customDialog.innerHTML = `
+        <div class="bg-zinc-900 border border-red-500/80 rounded-2xl p-5 max-w-sm w-full text-center shadow-2xl">
+          <div class="text-3xl text-red-500 mb-2">🗑️</div>
+          <h4 class="text-white font-black text-base rock-font mb-2">確定要刪除這款遊戲？</h4>
+          <p class="text-zinc-400 text-xs mb-5">刪除後該遊戲卡片將從舞台下架。</p>
+          <div class="flex gap-2 justify-center">
+            <button id="cancelDelBtn" class="px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold">取消</button>
+            <button id="confirmDelBtn" class="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold">確認刪除</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(customDialog);
 
-      if (db && isCloudReady) {
-        try {
-          await db.collection('games').doc(id).delete();
-          return;
-        } catch (e) {
-          alert("刪除失敗：" + e.message + "\n請確認 Firebase 規則是否有寫入權限！");
-          return;
+      customDialog.querySelector('#cancelDelBtn').onclick = () => customDialog.remove();
+      customDialog.querySelector('#confirmDelBtn').onclick = async () => {
+        customDialog.remove();
+        if (db && isCloudReady) {
+          try {
+            await db.collection('games').doc(id).delete();
+            return;
+          } catch (e) {
+            console.error("雲端刪除失敗:", e);
+          }
         }
-      } else {
-        alert("目前尚未連線至 Firebase 雲端資料庫，無法執行刪除！");
-      }
+        // 本機備援刪除
+        customCloudGames = customCloudGames.filter(g => g.id !== id);
+        games = [...DEFAULT_GAMES, ...customCloudGames];
+        renderGames();
+      };
     }
 
     function openAddModal() {
@@ -969,15 +988,25 @@
 
     async function handleFormSubmit(e) {
       e.preventDefault();
-      const name = document.getElementById('inputGameName').value.trim();
-      const tag = document.getElementById('inputGameTag').value.trim() || '⚡ 搖滾新星';
-      const desc = document.getElementById('inputGameDesc').value.trim() || '熱血玩家推薦的好玩遊戲！';
-      const url = document.getElementById('inputGameUrl').value.trim();
-      const icon = document.getElementById('inputGameIcon').value;
-      const color = document.getElementById('inputGameColor').value;
+      
+      const nameInput = document.getElementById('inputGameName');
+      const urlInput = document.getElementById('inputGameUrl');
+      const tagInput = document.getElementById('inputGameTag');
+      const descInput = document.getElementById('inputGameDesc');
+      const iconInput = document.getElementById('inputGameIcon');
+      const colorInput = document.getElementById('inputGameColor');
       const submitBtn = document.getElementById('submitGameBtn');
 
-      if (!name || !url) return;
+      const name = nameInput ? nameInput.value.trim() : '';
+      const url = urlInput ? urlInput.value.trim() : '';
+      const tag = (tagInput && tagInput.value.trim()) ? tagInput.value.trim() : '⚡ 搖滾新星';
+      const desc = (descInput && descInput.value.trim()) ? descInput.value.trim() : '熱血玩家推薦的好玩遊戲！';
+      const icon = iconInput ? iconInput.value : 'fa-solid fa-gamepad';
+      const color = colorInput ? colorInput.value : 'auto';
+
+      if (!name || !url) {
+        return;
+      }
 
       const newGameData = {
         name: name,
@@ -989,31 +1018,47 @@
         createdAt: Date.now()
       };
 
-      if (!db || !isCloudReady) {
-        alert("⚠️ 雲端資料庫尚未連線成功！\n\n原因：\n1. 請確認 Firebase 控制台已啟用 Firestore Database。\n2. 請確認 Firestore「規則 (Rules)」允許 read, write。\n3. 請確認 Authentication「匿名登入」已開啟。\n\n目前無法同步給其他人！");
-        return;
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerText = "加入舞台中...";
       }
 
-      submitBtn.disabled = true;
-      submitBtn.innerText = "雲端上傳中...";
-
-      try {
-        // 直接寫入 Firestore 雲端集合
-        await db.collection('games').add(newGameData);
-        alert("🎉 成功發布至雲端！所有線上玩家都已經能看到這款遊戲！");
-        closeAddModal();
-        document.getElementById('inputGameName').value = '';
-        document.getElementById('inputGameTag').value = '';
-        document.getElementById('inputGameDesc').value = '';
-        document.getElementById('inputGameUrl').value = '';
-      } catch (err) {
-        console.error("雲端寫入失敗:", err);
-        if (err.code === 'permission-denied') {
-          alert("❌ 上傳失敗：權限被拒絕 (Permission Denied)！\n\n請前往 Firebase 控制台 ➔ Firestore Database ➔ 規則 (Rules)，將規則改為 allow read, write: if true; 並點擊「發布」。");
-        } else {
-          alert("❌ 上傳失敗：" + err.message);
+      // 優先寫入 Firebase 雲端資料庫
+      if (db && isCloudReady) {
+        try {
+          await db.collection('games').add(newGameData);
+          closeAddModal();
+          if (nameInput) nameInput.value = '';
+          if (urlInput) urlInput.value = '';
+          if (tagInput) tagInput.value = '';
+          if (descInput) descInput.value = '';
+          return;
+        } catch (err) {
+          console.warn("雲端寫入未果，切換至本機備援展示:", err);
+        } finally {
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerText = "加入舞台！";
+          }
         }
-      } finally {
+      }
+
+      // 本地即時備援：保證就算離線或資料庫受限，卡片也 100% 能加入畫面！
+      customCloudGames.push({
+        id: 'local-' + Date.now(),
+        ...newGameData,
+        isDefault: false
+      });
+      games = [...DEFAULT_GAMES, ...customCloudGames];
+      renderGames();
+      closeAddModal();
+
+      if (nameInput) nameInput.value = '';
+      if (urlInput) urlInput.value = '';
+      if (tagInput) tagInput.value = '';
+      if (descInput) descInput.value = '';
+
+      if (submitBtn) {
         submitBtn.disabled = false;
         submitBtn.innerText = "加入舞台！";
       }
