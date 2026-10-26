@@ -1,4 +1,4 @@
-FULL_HTML_CONTENT_FROM_FILE<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
@@ -169,7 +169,7 @@ FULL_HTML_CONTENT_FROM_FILE<!DOCTYPE html>
       <button 
         onclick="openAddModal()" 
         class="px-4 py-2 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 border border-red-300 text-white font-black text-xs sm:text-sm flex items-center gap-1.5 transition active:scale-95 shadow-lg shadow-red-600/40"
-        title="搖滾區：提交遊戲建議（人工審核）"
+        title="搖滾區：管理員登入後新增遊戲"
       >
         <i class="fa-solid fa-bolt text-amber-300"></i>
         <span>搖滾區</span>
@@ -334,7 +334,10 @@ FULL_HTML_CONTENT_FROM_FILE<!DOCTYPE html>
     </div>
   </footer>
 
-  <!-- Add Game Modal (Rock Zone) - 改為人工審核提交 -->
+  <!-- Login troubleshooting notice: does not contain passwords or UIDs -->
+  <div id="authNotice" role="status" aria-live="polite" class="hidden fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:max-w-lg z-[70] p-4 rounded-2xl bg-zinc-900 border border-amber-500/70 text-amber-100 text-sm font-bold shadow-2xl"></div>
+
+  <!-- Add Game Modal (Rock Zone) - 管理員專用 -->
   <div id="addModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden items-center justify-center p-4">
     <div class="bg-zinc-900 border-2 border-red-500/80 rounded-3xl w-full max-w-md p-6 relative shadow-2xl shadow-red-950/60">
       <button onclick="closeAddModal()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-black border border-zinc-600 flex items-center justify-center transition cursor-pointer">✕</button>
@@ -342,32 +345,33 @@ FULL_HTML_CONTENT_FROM_FILE<!DOCTYPE html>
       <div class="flex items-center gap-3 mb-5">
         <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-red-600 to-rose-600 border border-red-400 flex items-center justify-center text-white text-lg font-black shadow">⚡</div>
         <div>
-          <h3 class="text-lg font-black text-white rock-font">搖滾區</h3>
-          <p class="text-xs text-zinc-400 font-bold">提交遊戲建議，審核通過後才會加入舞台</p>
+          <h3 id="addModalTitle" class="text-lg font-black text-white rock-font">搖滾區</h3>
+          <p class="text-xs text-zinc-400 font-bold">管理員登入後，貼上網址即可新增遊戲</p>
         </div>
       </div>
 
-      <!-- Formspree 表單：請將 YOUR_FORM_ID 換成你的實際 Formspree ID -->
-      <form action="https://formspree.io/f/YOUR_FORM_ID" method="POST" class="space-y-4">
+      <!-- 管理員專用：由 Firebase Authentication 與 Firestore Rules 驗證 -->
+      <form id="addGameForm" class="space-y-4">
         <div>
           <label class="block text-xs font-black text-zinc-300 mb-1">遊戲名稱</label>
-          <input type="text" name="game_name" required placeholder="例如：重金屬節奏大師" class="w-full px-3.5 py-2.5 rounded-xl border border-zinc-700 focus:border-red-500 focus:outline-none font-bold text-sm bg-zinc-800 text-white">
+          <input type="text" name="game_name" maxlength="120" required placeholder="例如：重金屬節奏大師" class="w-full px-3.5 py-2.5 rounded-xl border border-zinc-700 focus:border-red-500 focus:outline-none font-bold text-sm bg-zinc-800 text-white">
         </div>
         <div>
           <label class="block text-xs font-black text-zinc-300 mb-1">遊戲網址 (URL)</label>
-          <input type="url" name="game_url" required placeholder="https://example.com/my-game" class="w-full px-3.5 py-2.5 rounded-xl border border-zinc-700 focus:border-red-500 focus:outline-none font-mono text-xs sm:text-sm bg-zinc-800 text-white">
+          <input type="url" name="game_url" maxlength="2048" required placeholder="https://example.com/my-game" class="w-full px-3.5 py-2.5 rounded-xl border border-zinc-700 focus:border-red-500 focus:outline-none font-mono text-xs sm:text-sm bg-zinc-800 text-white">
         </div>
         <div>
           <label class="block text-xs font-black text-zinc-300 mb-1">簡短說明（選填）</label>
-          <input type="text" name="description" placeholder="這款遊戲大概是什麼" class="w-full px-3.5 py-2.5 rounded-xl border border-zinc-700 focus:border-red-500 focus:outline-none font-bold text-sm bg-zinc-800 text-white">
+          <input type="text" name="description" maxlength="1000" placeholder="這款遊戲大概是什麼" class="w-full px-3.5 py-2.5 rounded-xl border border-zinc-700 focus:border-red-500 focus:outline-none font-bold text-sm bg-zinc-800 text-white">
         </div>
-        <input type="hidden" name="_subject" value="歡樂喵喵屋 - 新遊戲提交審核">
+        <p id="addGameStatus" role="status" class="text-xs text-amber-300" aria-live="polite"></p>
         <div class="flex items-center justify-end gap-2 pt-3 border-t border-zinc-800">
+          <button type="button" onclick="signOutAdmin()" class="px-4 py-2 rounded-xl text-zinc-400 font-black text-xs hover:bg-zinc-800 cursor-pointer">登出</button>
           <button type="button" onclick="closeAddModal()" class="px-4 py-2 rounded-xl text-zinc-400 font-black text-xs hover:bg-zinc-800 cursor-pointer">取消</button>
-          <button type="submit" class="px-5 py-2 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 border border-red-400 text-white font-black text-xs shadow-lg shadow-red-900/50 cursor-pointer">提交審核</button>
+          <button type="submit" class="px-5 py-2 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 border border-red-400 text-white font-black text-xs shadow-lg shadow-red-900/50 cursor-pointer">新增遊戲</button>
         </div>
       </form>
-      <p class="text-[10px] text-zinc-500 mt-3 text-center">提交後會寄到管理員信箱進行人工審核，不會立即顯示。</p>
+      <p class="text-[10px] text-zinc-500 mt-3 text-center">新增成功後會立即顯示在舞台。</p>
     </div>
   </div>
 
@@ -605,7 +609,22 @@ FULL_HTML_CONTENT_FROM_FILE<!DOCTYPE html>
     let customCloudGames = [];
     let currentGamePlaying = null;
 
+    // Do not navigate an iframe or a new tab to a scheme supplied by Firestore.
+    function safeGameUrl(value) {
+      try {
+        const url = new URL(String(value));
+        if (url.protocol !== 'https:' || url.username || url.password) return '';
+        return url.href;
+      } catch { return ''; }
+    }
+
     /* Render Games to Container */
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"']/g, char => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      })[char]);
+    }
+
     function renderGames() {
       const container = document.getElementById('gamesContainer');
       const countText = document.getElementById('gameCountText');
@@ -636,34 +655,35 @@ FULL_HTML_CONTENT_FROM_FILE<!DOCTYPE html>
             </span>
             <div class="flex items-center justify-between relative z-10">
               <span class="text-[11px] font-black tracking-wider px-3 py-1 rounded-full border backdrop-blur-sm ${theme.badge}">
-                ${game.tag || '⚡ 搖滾曲目'}
+                ${escapeHtml(game.tag || '⚡ 搖滾曲目')}
               </span>
-              ${!game.isDefault ? `
-                <button onclick="deleteGame('${game.id}', event)" title="刪除此遊戲" class="text-zinc-400 hover:text-red-400 text-xs px-2 py-1 rounded-lg bg-black/40 hover:bg-black/60 transition cursor-pointer">
+              ${!game.isDefault && isAdminSession ? `
+                <button data-game-edit title="編輯此遊戲" class="text-zinc-400 hover:text-white text-xs px-2 py-1 rounded-lg bg-black/40 hover:bg-black/60 transition cursor-pointer"><i class="fa-solid fa-pen"></i></button>
+                <button data-game-delete title="刪除此遊戲" class="text-zinc-400 hover:text-red-400 text-xs px-2 py-1 rounded-lg bg-black/40 hover:bg-black/60 transition cursor-pointer">
                   <i class="fa-solid fa-trash-can"></i>
                 </button>
               ` : `
-                <a href="${game.url}" target="_blank" rel="noopener noreferrer" title="在新分頁開啟" class="text-zinc-300/80 hover:text-white text-xs px-2 py-1 rounded-lg bg-black/30 hover:bg-black/60 transition flex items-center gap-1">
+                <a href="${escapeHtml(safeGameUrl(game.url) || 'about:blank')}" target="_blank" rel="noopener noreferrer" title="在新分頁開啟" class="text-zinc-300/80 hover:text-white text-xs px-2 py-1 rounded-lg bg-black/30 hover:bg-black/60 transition flex items-center gap-1">
                   <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
                 </a>
               `}
             </div>
             <div class="w-14 h-14 mx-auto rounded-2xl bg-black/75 border border-white/10 flex items-center justify-center text-2xl text-white shadow-2xl group-hover:scale-110 transition duration-300 relative z-10">
-              <i class="${game.iconClass || 'fa-solid fa-gamepad'}"></i>
+              <i class="${escapeHtml(game.iconClass || 'fa-solid fa-gamepad')}"></i>
             </div>
             <div class="h-1"></div>
           </div>
           <div class="p-5 bg-[#121118] flex flex-col justify-between flex-1 gap-4">
             <div>
               <h4 class="text-base sm:text-lg font-black text-white rock-font tracking-wide mb-1.5 truncate">
-                ${game.name}
+                ${escapeHtml(game.name)}
               </h4>
               <p class="text-xs text-zinc-400 font-bold leading-relaxed line-clamp-2">
-                ${game.desc}
+                ${escapeHtml(game.desc)}
               </p>
             </div>
             <button 
-              onclick="playGame('${game.id}')" 
+              data-game-play 
               class="w-full py-3 rounded-2xl font-black text-xs sm:text-sm tracking-wider flex items-center justify-center gap-2 transition active:scale-95 ${theme.button} cursor-pointer"
             >
               <i class="fa-solid fa-play text-[11px]"></i>
@@ -671,6 +691,11 @@ FULL_HTML_CONTENT_FROM_FILE<!DOCTYPE html>
             </button>
           </div>
         `;
+        card.querySelector('[data-game-play]').onclick = () => playGame(game.id);
+        const editButton = card.querySelector('[data-game-edit]');
+        if (editButton) editButton.onclick = () => openEditModal(game.id);
+        const deleteButton = card.querySelector('[data-game-delete]');
+        if (deleteButton) deleteButton.onclick = event => deleteGame(game.id, event);
         container.appendChild(card);
       });
     }
@@ -679,6 +704,10 @@ FULL_HTML_CONTENT_FROM_FILE<!DOCTYPE html>
     function playGame(id) {
       const g = games.find(x => x.id === id);
       if (!g) return;
+      if (!safeGameUrl(g.url)) {
+        alert('這款遊戲的網址不安全或格式不正確，暫時無法開啟。');
+        return;
+      }
       currentGamePlaying = g;
       document.getElementById('playerTitle').innerText = `⚡ ${g.name}`;
       
@@ -717,7 +746,7 @@ FULL_HTML_CONTENT_FROM_FILE<!DOCTYPE html>
 
     function openExternalTab() {
       if (currentGamePlaying) {
-        window.open(currentGamePlaying.url, '_blank');
+        window.open(safeGameUrl(currentGamePlaying.url), '_blank', 'noopener,noreferrer');
       }
     }
 
@@ -734,6 +763,46 @@ FULL_HTML_CONTENT_FROM_FILE<!DOCTYPE html>
 
     let db = null;
     let isCloudReady = false;
+    let isAdminSession = false;
+    let editingGameId = null;
+
+    // FAIL CLOSED: an admin-only Firestore probe is meaningful only if an
+    // unauthenticated browser is actually denied access to the same path.
+    // During the old allow-all Firestore rule, nobody is treated as admin here.
+    async function adminProbeIsProtected() {
+      const probeName = 'happycat-guest-permission-probe';
+      const guestApp = firebase.apps.find(app => app.name === probeName)
+        || firebase.initializeApp(firebaseConfig, probeName);
+      try {
+        await guestApp.firestore().doc('_happycatAdminSession/check').get({ source: 'server' });
+        return false; // A guest could read it; rules are still too permissive.
+      } catch (error) {
+        if (error.code === 'permission-denied') return true;
+        throw error; // Network and initialization failures are not evidence of protection.
+      }
+    }
+
+    async function verifiedAdmin(user) {
+      if (!user || !db) return false;
+      const token = await user.getIdTokenResult();
+      if (token.claims.email_verified !== true || token.claims.firebase?.sign_in_provider !== 'google.com') return false;
+      if (!(await adminProbeIsProtected())) return false;
+      try {
+        // The *deployed* server Security Rules (not a public UID) decide access.
+        const check = await db.doc('_happycatAdminSession/check').get({ source: 'server' });
+        return !check.exists;
+      } catch (error) {
+        if (error.code === 'permission-denied') return false;
+        throw error;
+      }
+    }
+
+    async function requireAdmin() {
+      if (!db || !isCloudReady) throw new Error('雲端尚未連線，請稍後再試。');
+      if (!(await verifiedAdmin(firebase.auth().currentUser))) {
+        throw new Error('請使用授權的 Google 管理員帳號登入。');
+      }
+    }
 
     function initCloudStorage() {
       const statusBadge = document.getElementById('cloudStatusBadge');
@@ -749,8 +818,12 @@ FULL_HTML_CONTENT_FROM_FILE<!DOCTYPE html>
         }
         db = firebase.firestore();
 
-        firebase.auth().signInAnonymously().catch(e => {
-          console.warn("Firebase 匿名驗證失敗:", e);
+        // Visitors read without sign-in. Never replace an administrator with an anonymous session.
+        firebase.auth().onAuthStateChanged(async user => {
+          try { isAdminSession = await verifiedAdmin(user); }
+          catch { isAdminSession = false; }
+          if (!isAdminSession) closeAddModal();
+          renderGames();
         });
 
         db.collection('games').onSnapshot(snapshot => {
@@ -813,7 +886,9 @@ FULL_HTML_CONTENT_FROM_FILE<!DOCTYPE html>
 
     async function deleteGame(id, event) {
       if (event) event.stopPropagation();
-      
+      try { await requireAdmin(); }
+      catch (error) { alert(error.message); return; }
+
       const customDialog = document.createElement('div');
       customDialog.className = 'fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4';
       customDialog.innerHTML = `
@@ -832,31 +907,158 @@ FULL_HTML_CONTENT_FROM_FILE<!DOCTYPE html>
       customDialog.querySelector('#cancelDelBtn').onclick = () => customDialog.remove();
       customDialog.querySelector('#confirmDelBtn').onclick = async () => {
         customDialog.remove();
-        if (db && isCloudReady) {
-          try {
-            await db.collection('games').doc(id).delete();
-            return;
-          } catch (e) {
-            console.error("雲端刪除失敗:", e);
-          }
+        try {
+          await requireAdmin();
+          await db.collection('games').doc(id).delete();
+        } catch (error) {
+          console.error('雲端刪除失敗:', error.code || error.message);
+          alert('刪除未成功，遊戲仍保留。請確認管理員登入與網路連線。');
         }
-        customCloudGames = customCloudGames.filter(g => g.id !== id);
-        games = [...DEFAULT_GAMES, ...customCloudGames];
-        renderGames();
       };
     }
 
-    function openAddModal() {
-      const password = prompt("請輸入管理員密碼以開啟搖滾區：");
-      if (password !== "happy33723-487+") {
-        alert("密碼錯誤，無法開啟。");
+    // Browser OAuth must start directly from the user's click.  Do NOT await
+    // an asynchronous admin probe before calling signInWithPopup(): the popup
+    // can otherwise lose its browser user-activation permission.
+    function showAuthNotice(message) {
+      const notice = document.getElementById('authNotice');
+      if (!notice) { alert(message); return; }
+      notice.textContent = message;
+      notice.classList.remove('hidden');
+    }
+
+    function clearAuthNotice() {
+      const notice = document.getElementById('authNotice');
+      if (notice) notice.classList.add('hidden');
+    }
+
+    function handleLoginError(error) {
+      console.warn('Firebase Google 登入未完成:', error.code || error.message);
+      const reason = {
+        'auth/popup-closed-by-user': 'Google 登入視窗在完成前被關閉。請用一般 Chrome 開啟正式 HTTPS 測試網址，不要使用 Work 預覽頁。',
+        'auth/popup-blocked': '瀏覽器阻擋登入彈出視窗。請允許此網站開啟彈出視窗後重試。',
+        'auth/unauthorized-domain': '這個網址尚未加入 Firebase Authentication 的授權網域（Authorized domains）。',
+        'auth/operation-not-supported-in-this-environment': '目前頁面環境不支援 Google 登入，請改用經 Firebase 授權的 HTTPS 網站。',
+        'auth/network-request-failed': 'Google/Firebase 連線失敗，請檢查網路或阻擋登入的擴充功能。',
+        'auth/cancelled-popup-request': '有其他 Google 登入視窗正在開啟，請一次只進行一個登入程序。'
+      }[error.code];
+      showAuthNotice(reason || `登入未完成：${error.code || error.message || '未知錯誤'}。請保留錯誤訊息以供排查。`);
+    }
+
+    async function finishAdminLogin(user) {
+      // Firebase Auth success and Firestore admin approval are two distinct checks.
+      if (!(await verifiedAdmin(user))) {
+        showAuthNotice('Google 帳號已完成身分驗證，但尚未取得管理員權限。請先確認正式 Firestore UID 安全規則已正確設定；切勿依賴公開網頁中的 UID 判斷權限。');
         return;
       }
+      isAdminSession = true;
+      renderGames();
+      clearAuthNotice();
+      showGameForm();
+    }
+
+    function openAddModal() {
+      clearAuthNotice();
+      if (typeof firebase === 'undefined' || !db) {
+        showAuthNotice('Firebase 登入服務尚未就緒，請確認連線後再試。');
+        return;
+      }
+      if (!['https:', 'http:'].includes(window.location.protocol)) {
+        showAuthNotice('目前是本機檔案或預覽頁，無法可靠完成 Google OAuth。請把測試頁放到 Firebase 已授權的 HTTPS 網域，再用一般 Chrome 開啟。');
+        return;
+      }
+      const auth = firebase.auth();
+      if (isAdminSession && auth.currentUser) {
+        // Already authorized: do not prompt a second time.
+        showGameForm();
+        return;
+      }
+      // Otherwise always start Google sign-in directly. Prior lobby versions
+      // may have left an anonymous Firebase session in local browser storage;
+      // checking only `currentUser` here would falsely block Google login.
+
+      // IMPORTANT: The popup opens immediately as part of the real button click,
+      // before the first await or network request. Avoid repeated login loops.
+      const provider = new firebase.auth.GoogleAuthProvider();
+      provider.setCustomParameters({ login_hint: 'zzz212089@gmail.com', prompt: 'select_account' });
+      auth.signInWithPopup(provider)
+        .then(result => finishAdminLogin(result.user))
+        .catch(handleLoginError);
+    }
+
+    function showGameForm(game = null) {
+      const form = document.getElementById('addGameForm');
+      form.reset();
+      editingGameId = game?.id || null;
+      document.getElementById('addModalTitle').textContent = game ? '編輯遊戲' : '搖滾區';
+      form.querySelector('[type="submit"]').textContent = game ? '儲存修改' : '新增遊戲';
+      if (game) {
+        form.elements.game_name.value = game.name;
+        form.elements.game_url.value = game.url;
+        form.elements.description.value = game.desc || '';
+      }
+      document.getElementById('addGameStatus').textContent = '';
       document.getElementById('addModal').classList.remove('hidden');
       document.getElementById('addModal').classList.add('flex');
     }
 
+    async function openEditModal(id) {
+      try {
+        await requireAdmin();
+        const snapshot = await db.collection('games').doc(id).get({ source: 'server' });
+        if (!snapshot.exists) throw new Error('此遊戲已不存在，請重新整理。');
+        showGameForm({ ...snapshot.data(), id });
+      } catch (error) {
+        alert(error.code ? '無法載入遊戲，請確認登入與網路連線。' : error.message);
+      }
+    }
+
+    async function submitGame(event) {
+      event.preventDefault();
+      const form = event.currentTarget;
+      const targetId = editingGameId;
+      const status = document.getElementById('addGameStatus');
+      const button = form.querySelector('[type="submit"]');
+      button.disabled = true;
+      try {
+        await requireAdmin();
+        const values = new FormData(form);
+        const name = String(values.get('game_name')).trim();
+        const inputUrl = String(values.get('game_url')).trim();
+        const url = new URL(inputUrl);
+        if (url.protocol !== 'https:' || url.username || url.password) {
+          throw new Error('請使用不含帳號密碼的 HTTPS 遊戲網址。');
+        }
+        if (!name) throw new Error('請輸入遊戲名稱。');
+        const fields = { name, url: url.href, desc: String(values.get('description') || '').trim() };
+        if (targetId) {
+          await db.collection('games').doc(targetId).update(fields);
+        } else {
+          await db.collection('games').add({
+            ...fields, tag: '⚡ 搖滾新星', iconClass: 'fa-solid fa-gamepad',
+            colorTheme: 'crimsonFlame', createdAt: Date.now()
+          });
+        }
+        form.reset();
+        closeAddModal();
+      } catch (error) {
+        status.textContent = error.code === 'permission-denied'
+          ? '儲存未成功，請確認管理員登入與欄位內容；原有遊戲未變更。'
+          : (error.code ? '儲存未成功，請確認網路連線後重試。' : error.message);
+      } finally { button.disabled = false; }
+    }
+
+    async function signOutAdmin() {
+      try {
+        await firebase.auth().signOut();
+        isAdminSession = false;
+        closeAddModal();
+        renderGames();
+      } catch { alert('登出未完成，請重試。'); }
+    }
+
     function closeAddModal() {
+      editingGameId = null;
       document.getElementById('addModal').classList.add('hidden');
       document.getElementById('addModal').classList.remove('flex');
     }
@@ -1118,9 +1320,12 @@ FULL_HTML_CONTENT_FROM_FILE<!DOCTYPE html>
     window.deleteGame = deleteGame;
     window.openAddModal = openAddModal;
     window.closeAddModal = closeAddModal;
+    window.signOutAdmin = signOutAdmin;
+    window.openEditModal = openEditModal;
     window.toggleRockMusic = toggleRockMusic;
 
     function initApp() {
+      document.getElementById('addGameForm').addEventListener('submit', submitGame);
       renderGames();
       initCloudStorage();
 
