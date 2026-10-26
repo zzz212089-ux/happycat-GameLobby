@@ -733,7 +733,7 @@
       for (const key of profile.keys) {
         try {
           const value = store.getItem(key);
-          if (value !== null && /^\\d+(?:\\.\\d+)?$/.test(value) && value.length <= 24) seed[key] = value;
+          if (value !== null && /^\d+(?:\.\d+)?$/.test(value) && value.length <= 24) seed[key] = value;
         } catch (error) { /* Private browsing can deny storage. */ }
       }
       const target = new URL(clean);
@@ -754,7 +754,7 @@
       const profile = scoreProfile(currentGamePlaying.url);
       if (!profile || !profile.keys.includes(data.key)) return;
       const value = String(data.value);
-      if (!/^\\d+(?:\\.\\d+)?$/.test(value) || value.length > 24) return;
+      if (!/^\d+(?:\.\d+)?$/.test(value) || value.length > 24) return;
       try {
         const store = profile.kind === 'session' ? sessionStorage : localStorage;
         store.setItem(data.key, value);
