@@ -423,7 +423,10 @@
     <div class="flex-1 w-full bg-black relative overflow-hidden">
       <iframe 
         id="playerIframe" 
-        src="about:blank" 
+        src="about:blank"
+        sandbox="allow-scripts allow-forms allow-pointer-lock allow-modals allow-downloads allow-popups"
+        referrerpolicy="no-referrer"
+        allowfullscreen 
         class="w-full h-full border-0 block" 
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; gamepad; fullscreen"
       ></iframe>
@@ -700,6 +703,64 @@
       });
     }
 
+    /* HAPPYCAT_SANDBOX_V1: deliberately do NOT add allow-same-origin. */
+    const HAPPYCAT_SCORE_KEYS = Object.freeze({
+      'devil-cat': { kind: 'local', keys: ['abyss_cat_zoom'] },
+      'snake': { kind: 'local', keys: ['nokia_3310_snake_wrap_high', 'nokia_3310_snake_solid_high'] },
+      'littlebee': { kind: 'local', keys: ['galaxian_high_score'] },
+      'tetris': { kind: 'local', keys: ['neon_tetris_hi_v2'] },
+      'frogger': { kind: 'session', keys: ['frogger_high_score'] }
+    });
+
+    function scoreProfile(gameUrl) {
+      try {
+        const url = new URL(gameUrl);
+        if (url.hostname !== 'zzz212089-ux.github.io') return null;
+        const slug = url.pathname.split('/').filter(Boolean)[0]?.toLowerCase();
+        return HAPPYCAT_SCORE_KEYS[slug] || null;
+      } catch { return null; }
+    }
+
+    function sandboxGameUrl(gameUrl) {
+      const clean = safeGameUrl(gameUrl);
+      if (!clean) return 'about:blank';
+      const profile = scoreProfile(clean);
+      if (!profile) return clean;
+      // Only harmless game preferences/scores are passed into the sandbox.
+      // Authentication and other storage keys are NEVER passed.
+      const seed = {};
+      const store = profile.kind === 'session' ? sessionStorage : localStorage;
+      for (const key of profile.keys) {
+        try {
+          const value = store.getItem(key);
+          if (value !== null && /^\d+(?:\.\d+)?$/.test(value) && value.length <= 24) seed[key] = value;
+        } catch (error) { /* Private browsing can deny storage. */ }
+      }
+      const target = new URL(clean);
+      const hash = new URLSearchParams(target.hash.slice(1));
+      hash.set('happycat_scores', btoa(JSON.stringify(seed)));
+      target.hash = hash.toString();
+      return target.href;
+    }
+
+    // Opaque-origin games can save only their own whitelisted scores.
+    // The iframe cannot access the parent DOM, Firebase token, or other storage keys.
+    function receiveSandboxScore(event) {
+      if (event.origin !== 'null') return;
+      const iframe = document.getElementById('playerIframe');
+      if (event.source !== iframe?.contentWindow || !currentGamePlaying) return;
+      const data = event.data;
+      if (!data || data.type !== 'happycat-score-v1') return;
+      const profile = scoreProfile(currentGamePlaying.url);
+      if (!profile || !profile.keys.includes(data.key)) return;
+      const value = String(data.value);
+      if (!/^\d+(?:\.\d+)?$/.test(value) || value.length > 24) return;
+      try {
+        const store = profile.kind === 'session' ? sessionStorage : localStorage;
+        store.setItem(data.key, value);
+      } catch (error) { /* Browsers may disable storage. */ }
+    }
+
     /* Game Playback */
     function playGame(id) {
       const g = games.find(x => x.id === id);
@@ -714,7 +775,7 @@
       const iframe = document.getElementById('playerIframe');
       iframe.src = 'about:blank';
       setTimeout(() => {
-        iframe.src = g.url;
+        iframe.src = sandboxGameUrl(g.url);
       }, 50);
       
       document.getElementById('playerModal').classList.remove('hidden');
@@ -740,7 +801,7 @@
 
     function refreshPlayer() {
       if (currentGamePlaying) {
-        document.getElementById('playerIframe').src = currentGamePlaying.url;
+        document.getElementById('playerIframe').src = sandboxGameUrl(currentGamePlaying.url);
       }
     }
 
@@ -817,6 +878,11 @@
           firebase.initializeApp(firebaseConfig);
         }
         db = firebase.firestore();
+
+        // Keep admin authentication in this tab; new game tabs do not inherit it.
+        firebase.auth().setPersistence(firebase.auth.Auth.Persistence.SESSION).catch(error => {
+          console.warn('Tab-scoped authentication persistence unavailable:', error.code || error.message);
+        });
 
         // Visitors read without sign-in. Never replace an administrator with an anonymous session.
         firebase.auth().onAuthStateChanged(async user => {
@@ -1326,6 +1392,7 @@
 
     function initApp() {
       document.getElementById('addGameForm').addEventListener('submit', submitGame);
+      window.addEventListener('message', receiveSandboxScore);
       renderGames();
       initCloudStorage();
 
