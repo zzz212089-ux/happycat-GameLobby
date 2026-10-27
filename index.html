@@ -396,6 +396,10 @@
         </div>
       </form>
       <p class="text-[10px] text-zinc-500 mt-3 text-center">新增成功後會立即顯示在舞台。</p>
+      <section id="hiddenBuiltinSection" class="hidden mt-5 pt-4 border-t border-zinc-700" aria-label="已下架的原始遊戲">
+        <h4 class="text-sm text-amber-300 font-black mb-2">已下架的原始遊戲（可恢復）</h4>
+        <div id="hiddenBuiltinList" class="space-y-2"></div>
+      </section>
     </div>
   </div>
 
@@ -636,6 +640,60 @@
     let customCloudGames = [];
     let currentGamePlaying = null;
 
+    // Four historical cards remain local source backups; Firestore stores managed overlays.
+    const BUILTIN_PREFIX = 'builtin_';
+    const BUILTIN_HIDDEN_TAG = '__HAPPYCAT_HIDDEN__';
+    let builtinOverlays = new Map();
+    let hiddenBuiltinGames = [];
+    function getBuiltinGame(id) {
+      return DEFAULT_GAMES.find(game => game.id === id) || null;
+    }
+    function builtinDocId(id) { return BUILTIN_PREFIX + id; }
+    function builtinIdFromDocId(id) {
+      if (!id.startsWith(BUILTIN_PREFIX)) return null;
+      const gameId = id.slice(BUILTIN_PREFIX.length);
+      return getBuiltinGame(gameId) ? gameId : null;
+    }
+    function rebuildGameCatalog() {
+      const visibleBuiltins = [];
+      hiddenBuiltinGames = [];
+      for (const original of DEFAULT_GAMES) {
+        const overlay = builtinOverlays.get(original.id);
+        const merged = overlay
+          ? { ...original, ...overlay, id: original.id, isDefault: true }
+          : original;
+        if (overlay && overlay.tag === BUILTIN_HIDDEN_TAG) {
+          hiddenBuiltinGames.push(merged);
+        } else {
+          visibleBuiltins.push(merged);
+        }
+      }
+      games = [...visibleBuiltins, ...customCloudGames];
+      renderGames();
+    }
+    function renderHiddenBuiltinGames() {
+      const section = document.getElementById('hiddenBuiltinSection');
+      const list = document.getElementById('hiddenBuiltinList');
+      if (!section || !list) return;
+      list.replaceChildren();
+      section.classList.toggle('hidden', !isAdminSession || hiddenBuiltinGames.length === 0);
+      if (!isAdminSession) return;
+      for (const game of hiddenBuiltinGames) {
+        const row = document.createElement('div');
+        row.className = 'flex items-center justify-between gap-2 rounded-xl bg-zinc-800 px-3 py-2';
+        const label = document.createElement('span');
+        label.className = 'text-xs font-bold text-white truncate';
+        label.textContent = game.name;
+        const restore = document.createElement('button');
+        restore.type = 'button';
+        restore.className = 'shrink-0 px-3 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-bold';
+        restore.textContent = '恢復上架';
+        restore.onclick = () => restoreBuiltinGame(game.id);
+        row.append(label, restore);
+        list.appendChild(row);
+      }
+    }
+
     // Do not navigate an iframe or a new tab to a scheme supplied by Firestore.
     function safeGameUrl(value) {
       try {
@@ -661,6 +719,7 @@
         countText.innerText = `共有 ${games.length} 款遊戲`;
       }
       container.innerHTML = '';
+      renderHiddenBuiltinGames();
 
       const themeKeyList = Object.keys(COLOR_THEMES);
 
@@ -684,16 +743,17 @@
               <span class="text-[11px] font-black tracking-wider px-3 py-1 rounded-full border backdrop-blur-sm ${theme.badge}">
                 ${escapeHtml(game.tag || '⚡ 搖滾曲目')}
               </span>
-              ${!game.isDefault && isAdminSession ? `
-                <button data-game-edit title="編輯此遊戲" class="text-zinc-400 hover:text-white text-xs px-2 py-1 rounded-lg bg-black/40 hover:bg-black/60 transition cursor-pointer"><i class="fa-solid fa-pen"></i></button>
-                <button data-game-delete title="刪除此遊戲" class="text-zinc-400 hover:text-red-400 text-xs px-2 py-1 rounded-lg bg-black/40 hover:bg-black/60 transition cursor-pointer">
-                  <i class="fa-solid fa-trash-can"></i>
-                </button>
-              ` : `
+              <div class="flex items-center gap-1.5">
+                ${isAdminSession ? `
+                  <button data-game-edit title="編輯此遊戲" class="text-zinc-400 hover:text-white text-xs px-2 py-1 rounded-lg bg-black/40 hover:bg-black/60 transition cursor-pointer" aria-label="編輯遊戲"><i class="fa-solid fa-pen"></i></button>
+                  <button data-game-delete title="${game.isDefault ? '下架此原始遊戲（可恢復）' : '刪除此遊戲'}" class="text-zinc-400 hover:text-red-400 text-xs px-2 py-1 rounded-lg bg-black/40 hover:bg-black/60 transition cursor-pointer" aria-label="下架或刪除遊戲">
+                    <i class="fa-solid fa-trash-can"></i>
+                  </button>
+                ` : ''}
                 <a href="${escapeHtml(safeGameUrl(game.url) || 'about:blank')}" target="_blank" rel="noopener noreferrer" title="在新分頁開啟" class="text-zinc-300/80 hover:text-white text-xs px-2 py-1 rounded-lg bg-black/30 hover:bg-black/60 transition flex items-center gap-1">
                   <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
                 </a>
-              `}
+              </div>
             </div>
             <div class="w-14 h-14 mx-auto rounded-2xl bg-black/75 border border-white/10 flex items-center justify-center text-2xl text-white shadow-2xl group-hover:scale-110 transition duration-300 relative z-10">
               <i class="${escapeHtml(game.iconClass || 'fa-solid fa-gamepad')}"></i>
@@ -913,7 +973,7 @@
           try { isAdminSession = await verifiedAdmin(user); }
           catch { isAdminSession = false; }
           if (!isAdminSession) closeAddModal();
-          renderGames();
+          rebuildGameCatalog();
         });
 
         db.collection('games').onSnapshot(snapshot => {
@@ -921,8 +981,14 @@
           setCloudStatus(true, '雲端已連線 ⚡');
 
           customCloudGames = [];
+          builtinOverlays = new Map();
           snapshot.forEach(docSnap => {
             const data = docSnap.data();
+            const originalId = builtinIdFromDocId(docSnap.id);
+            if (originalId) {
+              builtinOverlays.set(originalId, data);
+              return;
+            }
             customCloudGames.push({
               id: docSnap.id,
               name: data.name || '自訂遊戲',
@@ -936,10 +1002,8 @@
               isDefault: false
             });
           });
-
           customCloudGames.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
-          games = [...DEFAULT_GAMES, ...customCloudGames];
-          renderGames();
+          rebuildGameCatalog();
         }, err => {
           isCloudReady = false;
           console.error("Firestore 監聽失敗:", err);
@@ -984,8 +1048,8 @@
       customDialog.innerHTML = `
         <div class="bg-zinc-900 border border-red-500/80 rounded-2xl p-5 max-w-sm w-full text-center shadow-2xl">
           <div class="text-3xl text-red-500 mb-2">🗑️</div>
-          <h4 class="text-white font-black text-base rock-font mb-2">確定要刪除這款遊戲？</h4>
-          <p class="text-zinc-400 text-xs mb-5">刪除後該遊戲卡片將從舞台下架。</p>
+          <h4 class="text-white font-black text-base rock-font mb-2">${getBuiltinGame(id) ? '確定要下架這款原始遊戲？' : '確定要刪除這款遊戲？'}</h4>
+          <p class="text-zinc-400 text-xs mb-5">${getBuiltinGame(id) ? '這款遊戲會從大廳隱藏，可到搖滾區恢復，原始資料不會刪除。' : '刪除後該遊戲卡片將從舞台下架。'}</p>
           <div class="flex gap-2 justify-center">
             <button id="cancelDelBtn" class="px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold">取消</button>
             <button id="confirmDelBtn" class="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold">確認刪除</button>
@@ -999,12 +1063,43 @@
         customDialog.remove();
         try {
           await requireAdmin();
-          await db.collection('games').doc(id).delete();
+          const original = getBuiltinGame(id);
+          if (original) {
+            const ref = db.collection('games').doc(builtinDocId(id));
+            const saved = await ref.get({ source: 'server' });
+            if (saved.exists) {
+              await ref.update({ tag: BUILTIN_HIDDEN_TAG });
+            } else {
+              await ref.set({
+                name: original.name, url: original.url, tag: BUILTIN_HIDDEN_TAG,
+                desc: original.desc, iconClass: original.iconClass,
+                colorTheme: original.colorTheme, createdAt: Date.now()
+              });
+            }
+          } else {
+            await db.collection('games').doc(id).delete();
+          }
         } catch (error) {
           console.error('雲端刪除失敗:', error.code || error.message);
           alert('刪除未成功，遊戲仍保留。請確認管理員登入與網路連線。');
         }
       };
+    }
+
+    async function restoreBuiltinGame(id) {
+      const original = getBuiltinGame(id);
+      if (!original) return;
+      try {
+        await requireAdmin();
+        const ref = db.collection('games').doc(builtinDocId(id));
+        const saved = await ref.get({ source: 'server' });
+        if (saved.exists && saved.data().tag === BUILTIN_HIDDEN_TAG) {
+          await ref.update({ tag: original.tag });
+        }
+      } catch (error) {
+        console.error('恢復原始遊戲失敗:', error.code || error.message);
+        alert('恢復未成功，請確認管理員登入及網路連線。');
+      }
     }
 
     // Browser OAuth must start directly from the user's click.  Do NOT await
@@ -1125,9 +1220,15 @@
     async function openEditModal(id) {
       try {
         await requireAdmin();
-        const snapshot = await db.collection('games').doc(id).get({ source: 'server' });
-        if (!snapshot.exists) throw new Error('此遊戲已不存在，請重新整理。');
-        showGameForm({ ...snapshot.data(), id });
+        const original = getBuiltinGame(id);
+        if (original) {
+          const snapshot = await db.collection('games').doc(builtinDocId(id)).get({ source: 'server' });
+          showGameForm(snapshot.exists ? { ...original, ...snapshot.data(), id } : original);
+        } else {
+          const snapshot = await db.collection('games').doc(id).get({ source: 'server' });
+          if (!snapshot.exists) throw new Error('此遊戲已不存在，請重新整理。');
+          showGameForm({ ...snapshot.data(), id });
+        }
       } catch (error) {
         alert(error.code ? '無法載入遊戲，請確認登入與網路連線。' : error.message);
       }
@@ -1155,7 +1256,19 @@
           throw new Error('請選擇有效的遊戲卡片顏色。');
         }
         const fields = { name, url: url.href, desc: String(values.get('description') || '').trim(), colorTheme };
-        if (targetId) {
+        const original = targetId ? getBuiltinGame(targetId) : null;
+        if (original) {
+          const ref = db.collection('games').doc(builtinDocId(targetId));
+          const saved = await ref.get({ source: 'server' });
+          if (saved.exists) {
+            await ref.update(fields);
+          } else {
+            await ref.set({
+              ...fields, tag: original.tag, iconClass: original.iconClass,
+              createdAt: Date.now()
+            });
+          }
+        } else if (targetId) {
           await db.collection('games').doc(targetId).update(fields);
         } else {
           await db.collection('games').add({
