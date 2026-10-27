@@ -339,7 +339,7 @@
 
   <!-- Add Game Modal (Rock Zone) - 管理員專用 -->
   <div id="addModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden items-center justify-center p-4">
-    <div class="bg-zinc-900 border-2 border-red-500/80 rounded-3xl w-full max-w-md p-6 relative shadow-2xl shadow-red-950/60">
+    <div class="bg-zinc-900 border-2 border-red-500/80 rounded-3xl w-full max-w-md max-h-[calc(100dvh-2rem)] overflow-y-auto p-6 relative shadow-2xl shadow-red-950/60">
       <button onclick="closeAddModal()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-black border border-zinc-600 flex items-center justify-center transition cursor-pointer">✕</button>
 
       <div class="flex items-center gap-3 mb-5">
@@ -363,6 +363,30 @@
         <div>
           <label class="block text-xs font-black text-zinc-300 mb-1">簡短說明（選填）</label>
           <input type="text" name="description" maxlength="1000" placeholder="這款遊戲大概是什麼" class="w-full px-3.5 py-2.5 rounded-xl border border-zinc-700 focus:border-red-500 focus:outline-none font-bold text-sm bg-zinc-800 text-white">
+        </div>
+        <div>
+          <label for="gameColorTheme" class="block text-xs font-black text-zinc-300 mb-1">遊戲卡片顏色</label>
+          <div class="flex items-center gap-3">
+            <span id="gameColorPreview" class="w-8 h-8 shrink-0 rounded-lg border border-white/30 shadow-md" style="background: linear-gradient(135deg, #dc2626, #e11d48);" aria-hidden="true"></span>
+            <select id="gameColorTheme" name="color_theme" class="w-full px-3.5 py-2.5 rounded-xl border border-zinc-700 focus:border-red-500 focus:outline-none font-bold text-sm bg-zinc-800 text-white cursor-pointer" aria-label="選擇遊戲卡片顏色">
+              <option value="crimsonFlame">烈焰紅</option>
+              <option value="cyberAmber">琥珀金</option>
+              <option value="emeraldGreen">翡翠綠</option>
+              <option value="electricPurple">電光紫</option>
+              <option value="neonCyan">霓虹青</option>
+              <option value="blazingOrange">熾熱橘</option>
+              <option value="hotPink">搖滾粉</option>
+              <option value="electricLime">螢光綠</option>
+              <option value="cobaltBlue">鈷藍</option>
+              <option value="warmPeach">暖蜜桃</option>
+              <option value="mysticTeal">神秘藍綠</option>
+              <option value="laserRuby">寶石紅</option>
+              <option value="solarYellow">耀眼黃</option>
+              <option value="darkGrape">深葡萄紫</option>
+              <option value="mintFresh">薄荷綠</option>
+              <option value="bloodCopper">古銅金</option>
+            </select>
+          </div>
         </div>
         <p id="addGameStatus" role="status" class="text-xs text-amber-300" aria-live="polite"></p>
         <div class="flex items-center justify-end gap-2 pt-3 border-t border-zinc-800">
@@ -1052,10 +1076,40 @@
         .catch(handleLoginError);
     }
 
+    // The game card color is always chosen from the existing, approved color themes.
+    const GAME_COLOR_SWATCHES = Object.freeze({
+      crimsonFlame: 'linear-gradient(135deg, #dc2626, #e11d48)',
+      cyberAmber: 'linear-gradient(135deg, #f59e0b, #ca8a04)',
+      emeraldGreen: 'linear-gradient(135deg, #059669, #0d9488)',
+      electricPurple: 'linear-gradient(135deg, #9333ea, #4f46e5)',
+      neonCyan: 'linear-gradient(135deg, #06b6d4, #2563eb)',
+      blazingOrange: 'linear-gradient(135deg, #ea580c, #d97706)',
+      hotPink: 'linear-gradient(135deg, #db2777, #c026d3)',
+      electricLime: 'linear-gradient(135deg, #84cc16, #16a34a)',
+      cobaltBlue: 'linear-gradient(135deg, #2563eb, #4338ca)',
+      warmPeach: 'linear-gradient(135deg, #f43f5e, #f97316)',
+      mysticTeal: 'linear-gradient(135deg, #0d9488, #0891b2)',
+      laserRuby: 'linear-gradient(135deg, #e11d48, #b91c1c)',
+      solarYellow: 'linear-gradient(135deg, #facc15, #f59e0b)',
+      darkGrape: 'linear-gradient(135deg, #4f46e5, #6b21a8)',
+      mintFresh: 'linear-gradient(135deg, #34d399, #14b8a6)',
+      bloodCopper: 'linear-gradient(135deg, #b45309, #92400e)'
+    });
+
+    function updateGameColorPreview() {
+      const selector = document.getElementById('gameColorTheme');
+      const preview = document.getElementById('gameColorPreview');
+      if (selector && preview) {
+        preview.style.background = GAME_COLOR_SWATCHES[selector.value] || GAME_COLOR_SWATCHES.crimsonFlame;
+      }
+    }
+
     function showGameForm(game = null) {
       const form = document.getElementById('addGameForm');
       form.reset();
       editingGameId = game?.id || null;
+      form.elements.color_theme.value = game && COLOR_THEMES[game.colorTheme] ? game.colorTheme : 'crimsonFlame';
+      updateGameColorPreview();
       document.getElementById('addModalTitle').textContent = game ? '編輯遊戲' : '搖滾區';
       form.querySelector('[type="submit"]').textContent = game ? '儲存修改' : '新增遊戲';
       if (game) {
@@ -1096,13 +1150,17 @@
           throw new Error('請使用不含帳號密碼的 HTTPS 遊戲網址。');
         }
         if (!name) throw new Error('請輸入遊戲名稱。');
-        const fields = { name, url: url.href, desc: String(values.get('description') || '').trim() };
+        const colorTheme = String(values.get('color_theme') || '');
+        if (!Object.prototype.hasOwnProperty.call(COLOR_THEMES, colorTheme)) {
+          throw new Error('請選擇有效的遊戲卡片顏色。');
+        }
+        const fields = { name, url: url.href, desc: String(values.get('description') || '').trim(), colorTheme };
         if (targetId) {
           await db.collection('games').doc(targetId).update(fields);
         } else {
           await db.collection('games').add({
             ...fields, tag: '⚡ 搖滾新星', iconClass: 'fa-solid fa-gamepad',
-            colorTheme: 'crimsonFlame', createdAt: Date.now()
+            createdAt: Date.now()
           });
         }
         form.reset();
@@ -1392,6 +1450,7 @@
 
     function initApp() {
       document.getElementById('addGameForm').addEventListener('submit', submitGame);
+      document.getElementById('gameColorTheme').addEventListener('change', updateGameColorPreview);
       window.addEventListener('message', receiveSandboxScore);
       renderGames();
       initCloudStorage();
